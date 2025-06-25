@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: idx-users-email
+      author: maksim.petukhau
+      changes:
+        - sqlFile:
+            path: db.idx-users-email.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql: DROP INDEX IF EXISTS idx_users_email;
