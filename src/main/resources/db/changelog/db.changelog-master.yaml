@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/users/db.create-users-table.yaml
+  - include:
+      file: db/changelog/card_info/db.create-card-info-table.yaml
+  - include:
+      file: db/changelog/users/db.idx-users-email.yaml
+  - include:
+      file: db/changelog/card_info/db.idx-card-info-user-id.yaml

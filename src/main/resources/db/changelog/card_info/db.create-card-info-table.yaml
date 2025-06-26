@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-card-info-table
+      author: maksim.petukhau
+      changes:
+        - sqlFile:
+            path: db.create-card-info-table.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS card_info;

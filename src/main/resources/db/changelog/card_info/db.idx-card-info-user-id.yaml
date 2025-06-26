@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: idx-card-info-user-id
+      author: maksim.petukhau
+      changes:
+        - sqlFile:
+            path: db.idx-card-info-user-id.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql: DROP INDEX IF EXISTS idx_card_info_user_id;
