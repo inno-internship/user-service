@@ -2,13 +2,14 @@ package com.innowise.userservice.application.service.impl;
 
 import com.innowise.userservice.application.dto.request.CreateCardInfoRequest;
 import com.innowise.userservice.application.dto.response.CardInfoResponse;
+import com.innowise.userservice.application.exception.CardNotFoundException;
+import com.innowise.userservice.application.exception.UserNotFoundException;
 import com.innowise.userservice.application.mapper.CardInfoMapper;
 import com.innowise.userservice.application.service.CardInfoService;
 import com.innowise.userservice.domain.entity.CardInfo;
 import com.innowise.userservice.domain.entity.User;
 import com.innowise.userservice.domain.repository.CardInfoRepository;
 import com.innowise.userservice.domain.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     @Transactional
     public CardInfoResponse createCardInfo(CreateCardInfoRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.userId()));
+                .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
         UUID id = UUID.randomUUID();
         CardInfo cardInfo = cardInfoMapper.toEntity(request, id, user);
@@ -41,7 +42,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     @Transactional
     public void deleteCardInfo(UUID id) {
         if (!cardInfoRepository.existsById(id)) {
-            throw new EntityNotFoundException("Card info not found with id: " + id);
+            throw new CardNotFoundException(id);
         }
         cardInfoRepository.deleteById(id);
     }
@@ -50,13 +51,13 @@ public class CardInfoServiceImpl implements CardInfoService {
     public CardInfoResponse getCardInfoById(UUID id) {
         return cardInfoRepository.findByIdJPQL(id)
                 .map(cardInfoMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException("Card info not found with id: " + id));
+                .orElseThrow(() -> new CardNotFoundException(id));
     }
 
     @Override
     public List<CardInfoResponse> getCardInfoByUserId(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("User not found with id: " + userId);
+            throw new UserNotFoundException(userId);
         }
         return cardInfoRepository.findByUserId(userId).stream()
                 .map(cardInfoMapper::toResponse)

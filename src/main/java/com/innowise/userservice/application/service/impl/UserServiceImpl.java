@@ -7,7 +7,7 @@ import com.innowise.userservice.application.mapper.UserMapper;
 import com.innowise.userservice.application.service.UserService;
 import com.innowise.userservice.domain.entity.User;
 import com.innowise.userservice.domain.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.innowise.userservice.application.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +36,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
         
         userMapper.updateEntity(user, request);
         user = userRepository.save(user);
@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(UUID id) {
         if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found with id: " + id);
+            throw new UserNotFoundException(id);
         }
         userRepository.deleteById(id);
     }
@@ -56,7 +56,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse getUserById(UUID id) {
         return userRepository.findById(id)
                 .map(userMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @Override
@@ -70,21 +70,22 @@ public class UserServiceImpl implements UserService {
     public UserResponse getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .map(userMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }
 
     @Override
     public List<UserResponse> getAllUsersByIds(List<UUID> ids) {
-        List<User> users = userRepository.findAllByIdIn(ids);
-        if (users.size() != ids.size()) {
+        List<UUID> uniqueIds = ids.stream().distinct().toList();
+        List<User> users = userRepository.findAllByIdIn(uniqueIds);
+
+        if (users.size() != uniqueIds.size()) {
             List<UUID> foundIds = users.stream().map(User::getId).toList();
-            List<UUID> notFoundIds = ids.stream()
+            List<UUID> notFoundIds = uniqueIds.stream()
                     .filter(id -> !foundIds.contains(id))
                     .toList();
-            throw new EntityNotFoundException("Users not found with ids: " + notFoundIds);
+            throw new UserNotFoundException(notFoundIds);
         }
-        return users.stream()
-                .map(userMapper::toResponse)
-                .toList();
+        
+        return users.stream().map(userMapper::toResponse).toList();
     }
 } 

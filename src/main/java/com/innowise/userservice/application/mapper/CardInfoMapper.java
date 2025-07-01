@@ -11,10 +11,10 @@ import java.util.UUID;
 
 @Mapper(componentModel = "spring")
 public interface CardInfoMapper {
-    
+
     @Mapping(target = "id", source = "id")
     @Mapping(target = "user", source = "user")
     CardInfo toEntity(CreateCardInfoRequest request, UUID id, User user);
-    
+
     CardInfoResponse toResponse(CardInfo cardInfo);
 } 
