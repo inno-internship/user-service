@@ -4,11 +4,13 @@ import com.innowise.userservice.domain.entity.CardInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 public interface CardInfoRepository extends JpaRepository<CardInfo, UUID> {
 
     @Query("SELECT c FROM CardInfo c WHERE c.id = :id")
@@ -16,4 +18,6 @@ public interface CardInfoRepository extends JpaRepository<CardInfo, UUID> {
 
     @Query(value = "SELECT * FROM card_info WHERE id IN (:ids)", nativeQuery = true)
     List<CardInfo> findAllByIdsNative(@Param("ids") List<UUID> ids);
+
+    List<CardInfo> findByUserId(UUID userId);
 }
