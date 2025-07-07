@@ -10,16 +10,15 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.BeanMapping;
 
-import java.util.UUID;
-
 @Mapper(
     componentModel = "spring",
     uses = {CardInfoMapper.class}
 )
 public interface UserMapper {
     
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "cards", ignore = true)
-    User toEntity(CreateUserRequest request, UUID id);
+    User toEntity(CreateUserRequest request);
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cards", ignore = true)

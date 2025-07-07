@@ -32,8 +32,7 @@ public class CardInfoServiceImpl implements CardInfoService {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
-        UUID id = UUID.randomUUID();
-        CardInfo cardInfo = cardInfoMapper.toEntity(request, id, user);
+        CardInfo cardInfo = cardInfoMapper.toEntity(request, user);
         cardInfo = cardInfoRepository.save(cardInfo);
         return cardInfoMapper.toResponse(cardInfo);
     }

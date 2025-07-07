@@ -26,8 +26,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
-        UUID id = UUID.randomUUID();
-        User user = userMapper.toEntity(request, id);
+        User user = userMapper.toEntity(request);
         user = userRepository.save(user);
         return userMapper.toResponse(user);
     }

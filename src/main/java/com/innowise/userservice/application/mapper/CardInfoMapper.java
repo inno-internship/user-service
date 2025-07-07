@@ -7,14 +7,12 @@ import com.innowise.userservice.domain.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.UUID;
-
 @Mapper(componentModel = "spring")
 public interface CardInfoMapper {
 
-    @Mapping(target = "id", source = "id")
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", source = "user")
-    CardInfo toEntity(CreateCardInfoRequest request, UUID id, User user);
+    CardInfo toEntity(CreateCardInfoRequest request, User user);
 
     CardInfoResponse toResponse(CardInfo cardInfo);
 } 
