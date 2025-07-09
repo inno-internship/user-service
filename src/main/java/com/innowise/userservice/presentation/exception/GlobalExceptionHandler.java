@@ -3,6 +3,7 @@ package com.innowise.userservice.presentation.exception;
 import com.innowise.userservice.application.dto.response.ApiError;
 import com.innowise.userservice.application.exception.BaseException;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +17,14 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ApiError> handleBaseException(BaseException ex, WebRequest request) {
+        log.error("Service exception occurred: {}", ex.getMessage());
+
         ApiError error = new ApiError(
                 request.getDescription(false),
                 ex.getMessage(),
@@ -34,11 +38,15 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult().getFieldErrors().stream().map(error ->
                         error.getField() + ": " + error.getDefaultMessage()).
                 collect(Collectors.joining(", "));
+
+        log.warn("Validation failed: {}", message);
+
         ApiError error = new ApiError(
                 request.getDescription(false),
                 message,
                 HttpStatus.BAD_REQUEST.value(),
-                LocalDateTime.now());
+                LocalDateTime.now()
+        );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
@@ -47,6 +55,9 @@ public class GlobalExceptionHandler {
         String message = ex.getAllErrors().stream()
                 .map(MessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.joining(", "));
+
+        log.warn("Handler method validation failed: {}", message);
+
         ApiError error = new ApiError(
                 request.getDescription(false),
                 message,
@@ -58,6 +69,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, WebRequest request) {
+        log.warn("Message not readable: {}", ex.getMessage());
+
         ApiError error = new ApiError(
                 request.getDescription(false),
                 "Unreadable message: " + ex.getMessage(),
@@ -72,6 +85,9 @@ public class GlobalExceptionHandler {
         String message = ex.getConstraintViolations().stream().map(violation ->
                         violation.getPropertyPath() + ": " + violation.getMessage()).
                 collect(Collectors.joining(", "));
+
+        log.warn("Constraint violation: {}", message);
+
         ApiError error = new ApiError(
                 request.getDescription(false),
                 message,
@@ -82,6 +98,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGlobalException(Exception ex, WebRequest request) {
+        log.error("Unexpected error occurred", ex);
+        
         ApiError error = new ApiError(
                 request.getDescription(false),
                 "An unexpected error occurred",
