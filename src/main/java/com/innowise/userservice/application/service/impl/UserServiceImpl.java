@@ -7,8 +7,10 @@ import com.innowise.userservice.application.mapper.UserMapper;
 import com.innowise.userservice.application.service.UserService;
 import com.innowise.userservice.domain.entity.User;
 import com.innowise.userservice.domain.repository.UserRepository;
-import com.innowise.userservice.application.exception.UserNotFoundException;
+import com.innowise.userservice.application.exception.notfound.UserNotFoundException;
+import com.innowise.userservice.application.exception.alreadyexists.UserAlreadyExists;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new UserAlreadyExists("User with email " + request.email() + " already exists");
+        }
+        
         User user = userMapper.toEntity(request);
         user = userRepository.save(user);
         return userMapper.toResponse(user);
@@ -35,7 +41,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+        
+        if (request.email() != null && !request.email().equals(user.getEmail()) && 
+            userRepository.existsByEmail(request.email())) {
+            throw new UserAlreadyExists("User with email " + request.email() + " already exists");
+        }
         
         userMapper.updateEntity(user, request);
         user = userRepository.save(user);
@@ -46,7 +57,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(UUID id) {
         if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException(id);
+            throw new UserNotFoundException("User not found with id: " + id);
         }
         userRepository.deleteById(id);
     }
@@ -55,7 +66,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse getUserById(UUID id) {
         return userRepository.findById(id)
                 .map(userMapper::toResponse)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
     }
 
     @Override
@@ -82,7 +93,7 @@ public class UserServiceImpl implements UserService {
             List<UUID> notFoundIds = uniqueIds.stream()
                     .filter(id -> !foundIds.contains(id))
                     .toList();
-            throw new UserNotFoundException(notFoundIds);
+            throw new UserNotFoundException("User not found with ids: " + notFoundIds);
         }
         
         return users.stream().map(userMapper::toResponse).toList();

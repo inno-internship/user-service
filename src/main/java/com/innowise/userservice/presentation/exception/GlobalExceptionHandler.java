@@ -1,9 +1,7 @@
 package com.innowise.userservice.presentation.exception;
 
 import com.innowise.userservice.application.dto.response.ApiError;
-import com.innowise.userservice.application.exception.CardNotFoundException;
-import com.innowise.userservice.application.exception.UserNotFoundException;
-import jakarta.persistence.EntityNotFoundException;
+import com.innowise.userservice.application.exception.BaseException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -21,14 +19,14 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ApiError> handleEntityNotFoundException(EntityNotFoundException ex, WebRequest request) {
+    @ExceptionHandler(BaseException.class)
+    public ResponseEntity<ApiError> handleBaseException(BaseException ex, WebRequest request) {
         ApiError error = new ApiError(
                 request.getDescription(false),
                 ex.getMessage(),
-                HttpStatus.NOT_FOUND.value(),
+                ex.getStatusCode(),
                 LocalDateTime.now());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(error, HttpStatus.valueOf(ex.getStatusCode()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -90,27 +88,5 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 LocalDateTime.now());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiError> handleUsersNotFoundException(UserNotFoundException ex, WebRequest request) {
-        ApiError error = new ApiError(
-                request.getDescription(false),
-                ex.getMessage(),
-                HttpStatus.NOT_FOUND.value(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(CardNotFoundException.class)
-    public ResponseEntity<ApiError> handleCardNotFoundException(CardNotFoundException ex, WebRequest request) {
-        ApiError error = new ApiError(
-                request.getDescription(false),
-                ex.getMessage(),
-                HttpStatus.NOT_FOUND.value(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 } 

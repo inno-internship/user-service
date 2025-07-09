@@ -2,8 +2,8 @@ package com.innowise.userservice.application.service.impl;
 
 import com.innowise.userservice.application.dto.request.CreateCardInfoRequest;
 import com.innowise.userservice.application.dto.response.CardInfoResponse;
-import com.innowise.userservice.application.exception.CardNotFoundException;
-import com.innowise.userservice.application.exception.UserNotFoundException;
+import com.innowise.userservice.application.exception.notfound.CardNotFoundException;
+import com.innowise.userservice.application.exception.notfound.UserNotFoundException;
 import com.innowise.userservice.application.mapper.CardInfoMapper;
 import com.innowise.userservice.application.service.CardInfoService;
 import com.innowise.userservice.domain.entity.CardInfo;
@@ -30,7 +30,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     @Transactional
     public CardInfoResponse createCardInfo(CreateCardInfoRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new UserNotFoundException(request.userId()));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + request.userId()));
 
         CardInfo cardInfo = cardInfoMapper.toEntity(request, user);
         cardInfo = cardInfoRepository.save(cardInfo);
@@ -41,7 +41,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     @Transactional
     public void deleteCardInfo(UUID id) {
         if (!cardInfoRepository.existsById(id)) {
-            throw new CardNotFoundException(id);
+            throw new CardNotFoundException("Card not found with id: " + id);
         }
         cardInfoRepository.deleteById(id);
     }
@@ -50,13 +50,13 @@ public class CardInfoServiceImpl implements CardInfoService {
     public CardInfoResponse getCardInfoById(UUID id) {
         return cardInfoRepository.findByIdJPQL(id)
                 .map(cardInfoMapper::toResponse)
-                .orElseThrow(() -> new CardNotFoundException(id));
+                .orElseThrow(() -> new CardNotFoundException("Card not found with id: " + id));
     }
 
     @Override
     public List<CardInfoResponse> getCardInfoByUserId(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException(userId);
+            throw new UserNotFoundException("User not found with id: " + userId);
         }
         return cardInfoRepository.findByUserId(userId).stream()
                 .map(cardInfoMapper::toResponse)

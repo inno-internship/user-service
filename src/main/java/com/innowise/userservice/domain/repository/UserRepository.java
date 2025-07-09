@@ -18,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.cards")
     List<User> findAllWithCards();
+    
+    boolean existsByEmail(String email);
 }
