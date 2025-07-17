@@ -6,10 +6,12 @@ import com.innowise.userservice.application.exception.notfound.CardNotFoundExcep
 import com.innowise.userservice.application.exception.notfound.UserNotFoundException;
 import com.innowise.userservice.application.mapper.CardInfoMapper;
 import com.innowise.userservice.application.service.CardInfoService;
+import com.innowise.userservice.application.service.CacheService;
 import com.innowise.userservice.domain.entity.CardInfo;
 import com.innowise.userservice.domain.entity.User;
 import com.innowise.userservice.domain.repository.CardInfoRepository;
 import com.innowise.userservice.domain.repository.UserRepository;
+import com.innowise.userservice.infrastructure.cache.CacheKeys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +30,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     private final CardInfoRepository cardInfoRepository;
     private final UserRepository userRepository;
     private final CardInfoMapper cardInfoMapper;
+    private final CacheService cacheService;
 
     @Override
     @Transactional
@@ -43,6 +46,10 @@ public class CardInfoServiceImpl implements CardInfoService {
         CardInfo cardInfo = cardInfoMapper.toEntity(request, user);
         cardInfo = cardInfoRepository.save(cardInfo);
         log.info("Successfully created card info with id: {} for user: {}", cardInfo.getId(), request.userId());
+
+        cacheService.evict(CacheKeys.getUserWithCardsKey(user.getId()));
+        log.debug("Evicted user {} from cache", user.getId());
+
         return cardInfoMapper.toResponse(cardInfo);
     }
 
@@ -51,13 +58,19 @@ public class CardInfoServiceImpl implements CardInfoService {
     public void deleteCardInfo(UUID id) {
         log.debug("Attempting to delete card info with id: {}", id);
         
-        if (!cardInfoRepository.existsById(id)) {
-            log.warn("Failed to delete card info - not found with id: {}", id);
-            throw new CardNotFoundException("Card not found with id: " + id);
-        }
+        CardInfo cardInfo = cardInfoRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Failed to delete card info - not found with id: {}", id);
+                    return new CardNotFoundException("Card not found with id: " + id);
+                });
+        
+        UUID userId = cardInfo.getUser().getId();
         
         cardInfoRepository.deleteById(id);
         log.info("Successfully deleted card info with id: {}", id);
+        
+        cacheService.evict(CacheKeys.getUserWithCardsKey(userId));
+        log.debug("Evicted user {} from cache due to card deletion", userId);
     }
 
     @Override
@@ -75,16 +88,17 @@ public class CardInfoServiceImpl implements CardInfoService {
     @Override
     public List<CardInfoResponse> getCardInfoByUserId(UUID userId) {
         log.debug("Retrieving all cards for user with id: {}", userId);
-        
-        if (!userRepository.existsById(userId)) {
+
+        List<CardInfo> cards = cardInfoRepository.findByUserId(userId);
+        if (cards.isEmpty() && !userRepository.existsById(userId)) {
             log.warn("Failed to retrieve cards - user not found with id: {}", userId);
             throw new UserNotFoundException("User not found with id: " + userId);
         }
-        
-        List<CardInfoResponse> cards = cardInfoRepository.findByUserId(userId).stream()
+
+        List<CardInfoResponse> cardResponses = cards.stream()
                 .map(cardInfoMapper::toResponse)
                 .toList();
-        log.info("Found {} cards for user with id: {}", cards.size(), userId);
-        return cards;
+        log.info("Found {} cards for user with id: {}", cardResponses.size(), userId);
+        return cardResponses;
     }
 } 
